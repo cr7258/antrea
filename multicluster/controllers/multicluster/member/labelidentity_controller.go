@@ -21,6 +21,10 @@ import (
 	"sync"
 	"time"
 
+	"antrea.io/antrea/multicluster/apis/multicluster/constants"
+	mcsv1alpha1 "antrea.io/antrea/multicluster/apis/multicluster/v1alpha1"
+	"antrea.io/antrea/multicluster/controllers/multicluster/common"
+	"antrea.io/antrea/multicluster/controllers/multicluster/commonarea"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -38,12 +42,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
-
-	"antrea.io/antrea/multicluster/apis/multicluster/constants"
-	mcsv1alpha1 "antrea.io/antrea/multicluster/apis/multicluster/v1alpha1"
-	"antrea.io/antrea/multicluster/controllers/multicluster/common"
-	"antrea.io/antrea/multicluster/controllers/multicluster/commonarea"
 )
 
 // LabelIdentityReconciler watches relevant Pod and Namespace events in the member cluster,
@@ -132,7 +130,7 @@ func (r *LabelIdentityReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1.Pod{}).
 		WithEventFilter(predicate.LabelChangedPredicate{}).
-		Watches(&source.Kind{Type: &v1.Namespace{}},
+		Watches(&v1.Namespace{},
 			handler.EnqueueRequestsFromMapFunc(r.namespaceMapFunc),
 			builder.WithPredicates(predicate.LabelChangedPredicate{})).
 		WithOptions(controller.Options{
@@ -143,9 +141,9 @@ func (r *LabelIdentityReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 // namespaceMapFunc handles Namespace update events (Namespace label change) by enqueuing
 // all Pods in the Namespace into the reconciler processing queue.
-func (r *LabelIdentityReconciler) namespaceMapFunc(ns client.Object) []reconcile.Request {
+func (r *LabelIdentityReconciler) namespaceMapFunc(ctx context.Context, ns client.Object) []reconcile.Request {
 	podList := &v1.PodList{}
-	r.Client.List(context.TODO(), podList, client.InNamespace(ns.GetName()))
+	r.Client.List(ctx, podList, client.InNamespace(ns.GetName()))
 	requests := make([]reconcile.Request, len(podList.Items))
 	for i, pod := range podList.Items {
 		requests[i] = reconcile.Request{

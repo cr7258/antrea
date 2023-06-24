@@ -38,7 +38,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 	k8smcsv1alpha1 "sigs.k8s.io/mcs-api/pkg/apis/v1alpha1"
 
 	"antrea.io/antrea/multicluster/apis/multicluster/constants"
@@ -495,8 +494,8 @@ func (r *ServiceExportReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	if r.endpointSliceEnabled {
 		return ctrl.NewControllerManagedBy(mgr).
 			For(&k8smcsv1alpha1.ServiceExport{}).
-			Watches(&source.Kind{Type: &corev1.Service{}}, handler.EnqueueRequestsFromMapFunc(objectMapFunc)).
-			Watches(&source.Kind{Type: &discovery.EndpointSlice{}}, handler.EnqueueRequestsFromMapFunc(endpointSliceMapFunc)).
+			Watches(&corev1.Service{}, handler.EnqueueRequestsFromMapFunc(objectMapFunc)).
+			Watches(&discovery.EndpointSlice{}, handler.EnqueueRequestsFromMapFunc(endpointSliceMapFunc)).
 			WithEventFilter(versionChange).
 			WithOptions(controller.Options{
 				MaxConcurrentReconciles: common.DefaultWorkerCount,
@@ -505,8 +504,8 @@ func (r *ServiceExportReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	}
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&k8smcsv1alpha1.ServiceExport{}).
-		Watches(&source.Kind{Type: &corev1.Service{}}, handler.EnqueueRequestsFromMapFunc(objectMapFunc)).
-		Watches(&source.Kind{Type: &corev1.Endpoints{}}, handler.EnqueueRequestsFromMapFunc(objectMapFunc)).
+		Watches(&corev1.Service{}, handler.EnqueueRequestsFromMapFunc(objectMapFunc)).
+		Watches(&corev1.Endpoints{}, handler.EnqueueRequestsFromMapFunc(objectMapFunc)).
 		WithEventFilter(versionChange).
 		WithOptions(controller.Options{
 			MaxConcurrentReconciles: common.DefaultWorkerCount,
@@ -518,7 +517,7 @@ func (r *ServiceExportReconciler) SetupWithManager(mgr ctrl.Manager) error {
 // When there are any Service or Endpoints changes, it might be reflected in ResourceExport
 // in leader cluster as well, so ServiceExportReconciler also needs to watch
 // Service and Endpoints events.
-func objectMapFunc(a client.Object) []reconcile.Request {
+func objectMapFunc(ctx context.Context, a client.Object) []reconcile.Request {
 	return []reconcile.Request{
 		{
 			NamespacedName: types.NamespacedName{
@@ -529,7 +528,7 @@ func objectMapFunc(a client.Object) []reconcile.Request {
 	}
 }
 
-func endpointSliceMapFunc(a client.Object) []reconcile.Request {
+func endpointSliceMapFunc(ctx context.Context, a client.Object) []reconcile.Request {
 	labels := a.GetLabels()
 	svcName := labels[discovery.LabelServiceName]
 	mappedObject := types.NamespacedName{}
