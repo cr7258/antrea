@@ -32,7 +32,7 @@ LABEL description="A Docker image based on the golang image, which includes code
 
 ENV GO111MODULE=on
 
-ARG K8S_VERSION=1.26.4
+ARG K8S_VERSION=1.27.3
 # The k8s.io/kube-openapi repo does not have tag, using a workable commit hash.
 # We use the version that is referenced in the Kubernetes go.mod (for the
 # correct K8s version).
