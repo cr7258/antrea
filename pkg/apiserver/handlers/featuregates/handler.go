@@ -77,6 +77,8 @@ func HandleFunc(k8sclient clientset.Interface) http.HandlerFunc {
 		agentfeatureGates := getAgentGatesResponse(agentConfig)
 		controllerfeatureGates := getControllerGatesResponse()
 		result := append(agentfeatureGates, controllerfeatureGates...)
+		klog.Info("seven test xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+		klog.Info(result)
 		err = json.NewEncoder(w).Encode(result)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)

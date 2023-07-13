@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"k8s.io/klog/v2"
 	"net/url"
 
 	"github.com/spf13/cobra"
@@ -86,6 +87,9 @@ func featureGateRequest(cmd *cobra.Command, mode string) error {
 	if resp, err = getFeatureGatesRequest(client); err != nil {
 		return err
 	}
+	klog.Info("seven cli xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+	klog.Info(mode)
+	klog.Info(resp)
 	var agentGates []featuregates.Response
 	var controllerGates []featuregates.Response
 	for _, v := range resp {
