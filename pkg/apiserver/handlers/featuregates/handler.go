@@ -17,6 +17,7 @@ package featuregates
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"gopkg.in/yaml.v2"
@@ -77,8 +78,8 @@ func HandleFunc(k8sclient clientset.Interface) http.HandlerFunc {
 		agentfeatureGates := getAgentGatesResponse(agentConfig)
 		controllerfeatureGates := getControllerGatesResponse()
 		result := append(agentfeatureGates, controllerfeatureGates...)
-		klog.Info("seven test xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
-		klog.Info(result)
+		fmt.Println("seven test xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+		fmt.Println(result)
 		err = json.NewEncoder(w).Encode(result)
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
