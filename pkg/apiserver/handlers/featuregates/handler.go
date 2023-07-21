@@ -17,6 +17,7 @@ package featuregates
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"gopkg.in/yaml.v2"
@@ -72,6 +73,10 @@ func HandleFunc(k8sclient clientset.Interface) http.HandlerFunc {
 			w.WriteHeader(http.StatusInternalServerError)
 			klog.Errorf("Failed to unmarshal Antrea antrea-agent.conf: %v", err)
 			return
+		}
+		fmt.Println("print test xxxxxxxxxxxxxxxxxx")
+		for k, v := range agentConfig.FeatureGates {
+			fmt.Println(k, v)
 		}
 
 		agentfeatureGates := getAgentGatesResponse(agentConfig)
