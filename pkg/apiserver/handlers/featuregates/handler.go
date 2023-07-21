@@ -71,7 +71,9 @@ func HandleFunc(k8sclient clientset.Interface) http.HandlerFunc {
 			return
 		}
 		fmt.Println("print antreaConfig xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
-		fmt.Println(antreaConfig)
+		for k, v := range agentConfig.FeatureGates {
+			fmt.Println(k, v)
+		}
 
 		controllerConfig := &Config{}
 		err = yaml.Unmarshal([]byte(antreaConfig.Data["antrea-controller.conf"]), controllerConfig)
@@ -101,6 +103,8 @@ func HandleFunc(k8sclient clientset.Interface) http.HandlerFunc {
 func getFeatureGatesResponse(cfg *Config, component string) []Response {
 	gatesResp := []Response{}
 	for featureName, status := range cfg.FeatureGates {
+		fmt.Println("print featureName xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+		fmt.Println(featureName)
 		featureGate := features.DefaultAntreaFeatureGates[featuregate.Feature(featureName)]
 		gatesResp = append(gatesResp, Response{
 			Component: component,
