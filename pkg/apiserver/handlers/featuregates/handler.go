@@ -18,21 +18,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"k8s.io/component-base/featuregate"
 	"net/http"
 
 	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/sets"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/klog/v2"
 
 	"antrea.io/antrea/pkg/features"
 	"antrea.io/antrea/pkg/util/env"
 )
-
-var controllerGates = sets.New[string]("Traceflow", "AntreaPolicy", "Egress", "NetworkPolicyStats", "NodeIPAM", "ServiceExternalIP", "Multicluster", "Multicast")
-var agentGates = sets.New[string]("AntreaPolicy", "AntreaProxy", "Egress", "EndpointSlice", "Traceflow", "FlowExporter", "NetworkPolicyStats",
-	"NodePortLocal", "AntreaIPAM", "Multicast", "ServiceExternalIP", "Multicluster")
 
 type (
 	Config struct {
@@ -74,11 +70,24 @@ func HandleFunc(k8sclient clientset.Interface) http.HandlerFunc {
 			klog.Errorf("Failed to unmarshal Antrea antrea-agent.conf: %v", err)
 			return
 		}
+		fmt.Println("print antreaConfig xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+		fmt.Println(antreaConfig)
 
-		agentfeatureGates := getAgentGatesResponse(agentConfig)
-		controllerfeatureGates := getControllerGatesResponse()
+		controllerConfig := &Config{}
+		err = yaml.Unmarshal([]byte(antreaConfig.Data["antrea-controller.conf"]), controllerConfig)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			klog.Errorf("Failed to unmarshal Antrea antrea-controller.conf: %v", err)
+			return
+		}
+		fmt.Println("print controllerConfig xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+		fmt.Println(controllerConfig)
+
+		agentfeatureGates := getFeatureGatesResponse(agentConfig, agentMode)
+		controllerfeatureGates := getFeatureGatesResponse(agentConfig, controllerMode)
 		result := append(agentfeatureGates, controllerfeatureGates...)
-		fmt.Println("seven test xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
+
+		fmt.Println("seven controller test xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx")
 		fmt.Println(result)
 		err = json.NewEncoder(w).Encode(result)
 		if err != nil {
@@ -89,40 +98,15 @@ func HandleFunc(k8sclient clientset.Interface) http.HandlerFunc {
 	}
 }
 
-func getAgentGatesResponse(cfg *Config) []Response {
+func getFeatureGatesResponse(cfg *Config, component string) []Response {
 	gatesResp := []Response{}
-	for df := range features.DefaultAntreaFeatureGates {
-		dfs := string(df)
-		if !agentGates.Has(dfs) {
-			continue
-		}
-		status, ok := cfg.FeatureGates[dfs]
-		if !ok {
-			status = features.DefaultMutableFeatureGate.Enabled(df)
-		}
-		featureStatus := getStatus(status)
+	for featureName, status := range cfg.FeatureGates {
+		featureGate := features.DefaultAntreaFeatureGates[featuregate.Feature(featureName)]
 		gatesResp = append(gatesResp, Response{
-			Component: agentMode,
-			Name:      dfs,
-			Status:    featureStatus,
-			Version:   string(features.DefaultAntreaFeatureGates[df].PreRelease),
-		})
-	}
-	return gatesResp
-}
-
-func getControllerGatesResponse() []Response {
-	gatesResp := []Response{}
-	for df := range features.DefaultAntreaFeatureGates {
-		dfs := string(df)
-		if !controllerGates.Has(dfs) {
-			continue
-		}
-		gatesResp = append(gatesResp, Response{
-			Component: controllerMode,
-			Name:      dfs,
-			Status:    getStatus(features.DefaultMutableFeatureGate.Enabled(df)),
-			Version:   string(features.DefaultAntreaFeatureGates[df].PreRelease),
+			Component: component,
+			Name:      featureName,
+			Status:    getStatus(status),
+			Version:   string(featureGate.PreRelease),
 		})
 	}
 	return gatesResp

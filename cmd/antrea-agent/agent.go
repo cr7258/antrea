@@ -845,7 +845,8 @@ func run(o *Options) error {
 		*o.config.EnablePrometheusMetrics,
 		o.config.ClientConnection.Kubeconfig,
 		v4Enabled,
-		v6Enabled)
+		v6Enabled,
+		k8sClient)
 	if err != nil {
 		return fmt.Errorf("error when creating agent API server: %v", err)
 	}
