@@ -95,11 +95,15 @@ func getAgentGatesResponse(cfg *Config) []Response {
 	gatesResp := []Response{}
 	for df := range features.DefaultAntreaFeatureGates {
 		dfs := string(df)
+
 		if !agentGates.Has(dfs) {
 			continue
 		}
+		fmt.Println(dfs)
 		status, ok := cfg.FeatureGates[dfs]
 		if !ok {
+			fmt.Println("ok !dfs")
+			fmt.Println(dfs)
 			status = features.DefaultMutableFeatureGate.Enabled(df)
 		}
 		featureStatus := getStatus(status)
